@@ -190,15 +190,14 @@ infra/
 dashboard/
     app.py
 
-docs/
-    api_contract.md
-
 tests/
     test_schema.py
     test_schema_validation.py
 
 docker-compose.yaml
 requirements.txt
+transaction_info.md
+mypy.ini
 ```
 
 ---
