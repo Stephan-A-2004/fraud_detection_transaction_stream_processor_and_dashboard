@@ -8,7 +8,7 @@ from services.generator.app.synth import generate_transaction
 STREAM_NAME = "transactions"
 
 
-def get_redis_client():
+def get_redis_client() -> redis.Redis:
     return redis.Redis(
         host="localhost",
         port=6379,
@@ -16,7 +16,7 @@ def get_redis_client():
     )
 
 
-def main():
+def main() -> None:
 
     r = get_redis_client()
 
