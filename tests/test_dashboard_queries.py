@@ -1,27 +1,35 @@
 import importlib
 import sys
 import types
+from typing import Any, Callable
 
 import pandas as pd
 
-sys.modules.setdefault("psycopg", types.SimpleNamespace(connect=lambda *args, **kwargs: None, Connection=object))
+fake_psycopg = types.ModuleType("psycopg")
+setattr(fake_psycopg, "connect", lambda *args, **kwargs: None)
+setattr(fake_psycopg, "Connection", object)
+sys.modules.setdefault("psycopg", fake_psycopg)
 
 
-def cache_resource(func=None, **kwargs):
+def cache_resource(
+    func: Callable[..., Any] | None = None, **kwargs: Any
+) -> Callable[..., Any]:
     if func is None:
         return lambda f: f
     return func
 
 
-sys.modules.setdefault("streamlit", types.SimpleNamespace(cache_resource=cache_resource))
+fake_streamlit = types.ModuleType("streamlit")
+setattr(fake_streamlit, "cache_resource", cache_resource)
+sys.modules.setdefault("streamlit", fake_streamlit)
 
 q = importlib.import_module("dashboard.dashboard_queries")
 
 
-def _capture(monkeypatch):
-    calls = []
+def _capture(monkeypatch: Any) -> list[tuple[Any, Any]]:
+    calls: list[tuple[Any, Any]] = []
 
-    def fake_read_df(query, params=None):
+    def fake_read_df(query: str, params: Any = None) -> pd.DataFrame:
         calls.append((query, params))
         normalized = " ".join(query.split())
         if "AS total_flags" in query:
@@ -36,7 +44,7 @@ def _capture(monkeypatch):
     return calls
 
 
-def test_count_queries_use_expected_where_clauses(monkeypatch) -> None:
+def test_count_queries_use_expected_where_clauses(monkeypatch: Any) -> None:
     calls = _capture(monkeypatch)
 
     assert q.get_total_flags("NOW() - INTERVAL '1 hour'") == 7
@@ -48,7 +56,7 @@ def test_count_queries_use_expected_where_clauses(monkeypatch) -> None:
     assert "INTERVAL '5 minutes'" in calls[2][0]
 
 
-def test_dataframe_queries_include_expected_sql_and_params(monkeypatch) -> None:
+def test_dataframe_queries_include_expected_sql_and_params(monkeypatch: Any) -> None:
     _capture(monkeypatch)
 
     users = q.get_users("NOW() - INTERVAL '24 hours'")

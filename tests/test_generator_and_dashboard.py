@@ -38,5 +38,5 @@ def test_risk_band_helpers_add_labels_and_styles() -> None:
     assert risk_band_from_score(50) == "Medium"
     assert risk_band_from_score(80) == "High"
     assert highlight_risk_band(out.iloc[0]) == [""] * len(out.columns)
-    assert highlight_risk_band(out.iloc[1]) == ["background-color: #fff3cd"] * len(out.columns)
-    assert highlight_risk_band(out.iloc[2]) == ["background-color: #ffcccc"] * len(out.columns)
+    assert highlight_risk_band(out.iloc[1]) == ["background-color: #d97706"] * len(out.columns)
+    assert highlight_risk_band(out.iloc[2]) == ["background-color: #b91c1c"] * len(out.columns)

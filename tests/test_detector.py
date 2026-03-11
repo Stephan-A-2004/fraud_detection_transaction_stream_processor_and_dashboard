@@ -4,7 +4,13 @@ from services.common.schemas import Transaction
 from services.processor.app.detector import SlidingWindowDetector
 
 
-def make_tx(*, user_id="u1", amount=1000.0, timestamp=100, merchant="Tesco") -> Transaction:
+def make_tx(
+    *,
+    user_id: str = "u1",
+    amount: float = 1000.0,
+    timestamp: int = 100,
+    merchant: str = "Tesco",
+) -> Transaction:
     return Transaction(
         transaction_id=uuid4(),
         user_id=user_id,

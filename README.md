@@ -226,7 +226,6 @@ tests/
     test_generator_and_dashboard.py
     test_detector.py
     test_dashboard_queries.py
-    dashboard_queries.py
 
 
 docs/
@@ -507,5 +506,6 @@ These are common building blocks in modern fintech and payment platforms.
 # Possible Future Extension
 
 * Kafka instead of Redis Streams
+* Implement risk score calcultion for users, based on their transaction history and store this in a different table.
 
 ---

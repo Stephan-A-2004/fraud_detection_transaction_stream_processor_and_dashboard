@@ -1,9 +1,14 @@
 import importlib
 import sys
 import types
+from typing import Any, Literal
 
-fake_redis_module = types.SimpleNamespace(Redis=object)
-fake_psycopg_module = types.SimpleNamespace(connect=lambda **kwargs: None)
+fake_redis_module = types.ModuleType("redis")
+setattr(fake_redis_module, "Redis", object)
+
+fake_psycopg_module = types.ModuleType("psycopg")
+setattr(fake_psycopg_module, "connect", lambda **kwargs: None)
+
 sys.modules.setdefault("redis", fake_redis_module)
 sys.modules.setdefault("psycopg", fake_psycopg_module)
 
@@ -19,20 +24,20 @@ FlagStore = store_mod.FlagStore
 
 class FakeCursor:
     def __init__(self) -> None:
-        self.calls = []
+        self.calls: list[tuple[Any, Any]] = []
 
-    def execute(self, query, params):
+    def execute(self, query: Any, params: Any) -> None:
         self.calls.append((query, params))
 
 
 class CursorContext:
-    def __init__(self, cursor):
+    def __init__(self, cursor: FakeCursor) -> None:
         self.cursor_obj = cursor
 
-    def __enter__(self):
+    def __enter__(self) -> FakeCursor:
         return self.cursor_obj
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(self, exc_type: Any, exc: Any, tb: Any) -> Literal[False]:
         return False
 
 
@@ -41,32 +46,32 @@ class FakeConnection:
         self.cursor_instance = FakeCursor()
         self.closed = False
 
-    def cursor(self):
+    def cursor(self) -> CursorContext:
         return CursorContext(self.cursor_instance)
 
-    def close(self):
+    def close(self) -> None:
         self.closed = True
 
 
 class FakeRedis:
-    def __init__(self, responses):
+    def __init__(self, responses: list[Any]) -> None:
         self.responses = list(responses)
-        self.calls = []
+        self.calls: list[tuple[Any, int, int]] = []
 
-    def xread(self, streams, count, block):
+    def xread(self, streams: Any, count: int, block: int) -> Any:
         self.calls.append((streams, count, block))
         return self.responses.pop(0)
 
 
 class FakeRedisFactory:
-    def __init__(self, responses):
+    def __init__(self, responses: list[Any]) -> None:
         self.instance = FakeRedis(responses)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> FakeRedis:
         return self.instance
 
 
-def test_flag_store_insert_flag_executes_expected_insert(monkeypatch) -> None:
+def test_flag_store_insert_flag_executes_expected_insert(monkeypatch: Any) -> None:
     fake_conn = FakeConnection()
     monkeypatch.setattr(store_mod.psycopg, "connect", lambda **kwargs: fake_conn)
 
@@ -90,7 +95,7 @@ def test_flag_store_insert_flag_executes_expected_insert(monkeypatch) -> None:
     assert params == ("u1", 100, 150, 3, 5500.0, "velocity_amount", 80, ["a", "b", "c"], "dedupe")
 
 
-def test_redis_stream_consumer_returns_entries_and_advances_cursor(monkeypatch) -> None:
+def test_redis_stream_consumer_returns_entries_and_advances_cursor(monkeypatch: Any) -> None:
     factory = FakeRedisFactory([
         [("transactions", [("1-0", {"a": "1"}), ("2-0", {"a": "2"})])],
         [],

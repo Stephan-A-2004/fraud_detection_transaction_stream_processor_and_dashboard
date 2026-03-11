@@ -2,23 +2,32 @@ import importlib
 import json
 import sys
 import types
+from typing import Any
 
-sys.modules.setdefault("redis", types.SimpleNamespace(Redis=object))
+fake_redis_module = types.ModuleType("redis")
+setattr(fake_redis_module, "Redis", object)
+sys.modules.setdefault("redis", fake_redis_module)
 
 generator_main = importlib.import_module("services.generator.app.main")
 
 
 class FakeRedisClient:
-    def __init__(self):
-        self.calls = []
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, dict[str, Any], int, bool]] = []
 
-    def xadd(self, stream, payload, maxlen, approximate):
+    def xadd(
+        self,
+        stream: str,
+        payload: dict[str, Any],
+        maxlen: int,
+        approximate: bool,
+    ) -> None:
         self.calls.append((stream, payload, maxlen, approximate))
         raise KeyboardInterrupt
 
 
 class FakeTransaction:
-    def model_dump_json(self):
+    def model_dump_json(self) -> str:
         return json.dumps({
             "transaction_id": "00000000-0000-0000-0000-000000000001",
             "user_id": "u1",
@@ -29,11 +38,11 @@ class FakeTransaction:
         })
 
 
-def test_get_redis_client_uses_decode_responses(monkeypatch) -> None:
-    captured = {}
+def test_get_redis_client_uses_decode_responses(monkeypatch: Any) -> None:
+    captured: dict[str, Any] = {}
 
     class DummyRedis:
-        def __init__(self, **kwargs):
+        def __init__(self, **kwargs: Any) -> None:
             captured.update(kwargs)
 
     monkeypatch.setattr(generator_main.redis, "Redis", DummyRedis)
@@ -42,7 +51,7 @@ def test_get_redis_client_uses_decode_responses(monkeypatch) -> None:
     assert captured["decode_responses"] is True
 
 
-def test_main_publishes_generated_transaction_once(monkeypatch) -> None:
+def test_main_publishes_generated_transaction_once(monkeypatch: Any) -> None:
     fake_redis = FakeRedisClient()
     monkeypatch.setattr(generator_main, "get_redis_client", lambda: fake_redis)
     monkeypatch.setattr(generator_main, "generate_transaction", lambda: FakeTransaction())

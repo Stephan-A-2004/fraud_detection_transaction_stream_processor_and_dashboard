@@ -90,8 +90,15 @@ with left:
 
 with right:
     st.subheader("Most recent alerts")
-    recent = get_recent_alerts(where_clause, params)
-    st.dataframe(recent, use_container_width=True, hide_index=True)
+    recent = add_risk_band(get_recent_alerts(where_clause, params))
+    if not recent.empty:
+        st.dataframe(
+            recent.style.apply(highlight_risk_band, axis=1),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("No alerts found for the selected filters.")
 
 st.subheader("Priority alert views")
 
