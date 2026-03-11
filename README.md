@@ -504,13 +504,8 @@ These are common building blocks in modern fintech and payment platforms.
 
 ---
 
-# Possible Future Extensions
+# Possible Future Extension
 
 * Kafka instead of Redis Streams
-* Redis consumer groups
-* multiple processor instances
-* anomaly detection models
-* alert notification system
-* production deployment
 
 ---
