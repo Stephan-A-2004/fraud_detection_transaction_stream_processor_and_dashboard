@@ -9,13 +9,21 @@ from services.processor.app.txn_risk_score_calculation import compute_risk_score
 from services.processor.app.txn_parsing import parse_transaction
 
 import hashlib
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+)
+
+logger = logging.getLogger("processor")
 
 def main() -> None:
     consumer = RedisStreamConsumer()
     detector = SlidingWindowDetector(window_seconds=60, min_count=3, min_total=5000.0)
     store = FlagStore(DbConfig())
 
-    print("Starting processor... (listening to Redis stream '{TRANSACTION_STREAM}')")
+    logger.info("Starting processor... (listening to Redis stream '%s')", TRANSACTION_STREAM)
 
     try:
         processed_transactions = 0
@@ -23,7 +31,7 @@ def main() -> None:
             try:
                 entries = consumer.read(block_ms=5000, count=100)
             except Exception as e:
-                print(f"Redis read failed: {e}. Retrying in 2 seconds...")
+                logger.error("Redis read failed: %s. Retrying in 2 seconds...", e)
                 import time
                 time.sleep(2)
                 continue
@@ -36,12 +44,12 @@ def main() -> None:
                 processed_transactions += 1
 
                 if processed_transactions % 100 == 0:
-                    print(f"Processed {processed_transactions} events")
+                    logger.info("Processed %s events", processed_transactions)
 
                 try:
                     tx = parse_transaction(fields)
                 except Exception as e:
-                    print(f"Skipping bad transaction: {e}")
+                    logger.warning("Skipping bad transaction: %s", e)
                     continue
                 flagged_list = detector.on_transaction(tx)
 
@@ -61,11 +69,15 @@ def main() -> None:
                         flagged.reason,
                     )
 
-                    print(
-                        f"FLAG user={flagged.user_id} count={flagged.txn_count} "
-                        f"sum={flagged.total_amount:.2f} reason={flagged.reason} "
-                        f"risk={risk_score} "
-                        f"window=[{flagged.window_start},{flagged.window_end}]"
+                    logger.info(
+                        "FLAG user=%s count=%s sum=%.2f reason=%s risk=%s window=[%s,%s]",
+                        flagged.user_id,
+                        flagged.txn_count,
+                        flagged.total_amount,
+                        flagged.reason,
+                        risk_score,
+                        flagged.window_start,
+                        flagged.window_end,
                     )
 
 
@@ -82,9 +94,9 @@ def main() -> None:
                             dedupe_key=dedupe_key,
                         )
                     except Exception as e:
-                        print(f"Failed to store flag: {e}")
+                        logger.error("Failed to store flag: %s", e)
     except KeyboardInterrupt:
-        print("\nProcessor stopped.")
+        logger.info("Processor stopped.")
     finally:
         store.close()
 

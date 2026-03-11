@@ -7,6 +7,14 @@ from services.generator.app.synth import generate_transaction
 
 from services.common.config import TRANSACTION_STREAM, REDIS_HOST, REDIS_PORT
 
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s - %(message)s",
+)
+
+logger = logging.getLogger("generator")
 
 def get_redis_client() -> redis.Redis:
     return redis.Redis(
@@ -20,7 +28,7 @@ def main() -> None:
 
     r = get_redis_client()
 
-    print("Starting transaction generator...")
+    logger.info("Starting transaction generator...")
 
     while True:
 
@@ -30,7 +38,7 @@ def main() -> None:
 
         r.xadd(TRANSACTION_STREAM, payload, maxlen=10000, approximate=True)
 
-        print(f"Produced transaction: {payload}")
+        logger.info("Produced transaction: %s", payload)
 
         time.sleep(1)
 

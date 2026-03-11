@@ -3,6 +3,10 @@
 
 # Real-Time Transaction Fraud Detection System
 
+![Python](https://img.shields.io/badge/Python-3.11-blue)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+
 A **streaming fraud detection pipeline** built with Python that simulates how financial platforms detect suspicious transaction activity in real time.
 
 The system generates synthetic transaction events, streams them through **Redis Streams**, processes them with a Python fraud detection service, stores alerts in **PostgreSQL**, and visualises suspicious activity in a **Streamlit monitoring dashboard**.
@@ -26,7 +30,7 @@ Stream Processor (fraud rules + risk scoring)
 PostgreSQL (flags table)
         │
         ▼
-Streamlit Dashboard
+Streamlit Dashboard (Images of the dashboard can be found in docs)
 ```
 
 ---
@@ -40,6 +44,21 @@ Streamlit Dashboard
 5. If a rule triggers, the processor generates an alert and assigns a **risk score**.
 6. Alerts are written to PostgreSQL in the `flags` table.
 7. The **Streamlit dashboard** queries PostgreSQL to visualise alerts and trends.
+
+---
+
+
+# Technologies Used
+
+| Component | Technology |
+|-----------|------------|
+| Language | Python |
+| Stream transport | Redis Streams |
+| Database | PostgreSQL |
+| Dashboard | Streamlit |
+| Containerisation | Docker |
+| Testing | Pytest |
+| Static typing | MyPy |
 
 ---
 
@@ -200,6 +219,22 @@ dashboard/
 tests/
     test_schema.py
     test_schema_validation.py
+    test_store_consumer_main.py
+    test_txn_parsing_and_risk_scoring.py
+    test_processor_main_flow.py
+    test_generator_main.py
+    test_generator_and_dashboard.py
+    test_detector.py
+    test_dashboard_queries.py
+    dashboard_queries.py
+
+
+docs/
+    alerts_by_rule_bar_chart.png
+    flags_per_minute_chart.png
+    tables_part1.png
+    tables_part2.png
+
 
 docker-compose.yaml
 requirements.txt
@@ -274,6 +309,13 @@ All commands should be run from the project root.
 
 ---
 
+# Initial setup
+
+Start infrastructure:
+
+
+docker compose up -d
+
 # Terminal 1 — Transaction Generator
 Run:
 
@@ -288,12 +330,7 @@ Start the generator:
 python -m services.generator.app.main
 ```
 
-Example output:
 
-```
-Produced transaction: {...}
-Produced transaction: {...}
-```
 
 Transactions are published to the Redis stream `transactions`.
 
@@ -314,12 +351,6 @@ Start the processor:
 python -m services.processor.app.main
 ```
 
-Example output:
-
-```
-FLAG user=u5 count=4 sum=6123.44 reason=velocity_amount risk=82 window=[...]
-FLAG user=u8 count=5 sum=7032.11 reason=high_velocity risk=76 window=[...]
-```
 
 Each `FLAG` represents a suspicious transaction pattern detected by the rules.
 
@@ -342,6 +373,25 @@ streamlit run dashboard/app.py
 ```
 
 The dashboard opens automatically in your browser.
+
+---
+
+# Logs
+
+The transaction generator, fraud processor, and dashboard run as local Python processes, so their logs appear directly in the terminal where each service is started.
+
+Redis and PostgreSQL run in Docker, so their logs can be viewed with:
+
+```
+docker compose logs -f
+```
+
+or for specific infrastructure services:
+
+```
+docker compose logs -f redis
+docker compose logs -f postgres
+```
 
 ---
 
