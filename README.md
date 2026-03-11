@@ -170,6 +170,7 @@ A unique constraint on this key ensures identical alerts are only written once.
 services/
     common/
         schemas.py
+        config.py
 
     generator/
         app/
@@ -182,6 +183,8 @@ services/
             consumer.py
             detector.py
             store.py
+            txn_parsing.py
+            txn_risk_score_calculation.py
 
 infra/
     postgres/
@@ -189,6 +192,10 @@ infra/
 
 dashboard/
     app.py
+    dashboard_connection_db.py
+    dashboard_filtering.py
+    dashboard_queries.py
+    risk_band_assignment_and_dashboard_styling.py
 
 tests/
     test_schema.py
@@ -268,6 +275,12 @@ All commands should be run from the project root.
 ---
 
 # Terminal 1 — Transaction Generator
+Run:
+
+```
+.\.venv\Scripts\activate
+```
+
 
 Start the generator:
 
@@ -287,6 +300,13 @@ Transactions are published to the Redis stream `transactions`.
 ---
 
 # Terminal 2 — Fraud Processor
+
+Run:
+
+```
+.\.venv\Scripts\activate
+```
+
 
 Start the processor:
 
@@ -310,6 +330,12 @@ Alerts are inserted into PostgreSQL.
 # Terminal 3 — Monitoring Dashboard
 
 Run the dashboard:
+
+```
+$env:PYTHONPATH="."
+```
+
+Then run in the same terminal:
 
 ```
 streamlit run dashboard/app.py

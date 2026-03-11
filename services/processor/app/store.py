@@ -5,14 +5,22 @@ from typing import Iterable
 
 import psycopg
 
+from services.common.config import (
+    POSTGRES_HOST,
+    POSTGRES_PORT,
+    POSTGRES_DB,
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+)
+
 
 @dataclass(frozen=True)
 class DbConfig:
-    host: str = "localhost"
-    port: int = 5432
-    dbname: str = "transactions"
-    user: str = "app"
-    password: str = "app"
+    host: str = POSTGRES_HOST
+    port: int = POSTGRES_PORT
+    dbname: str = POSTGRES_DB
+    user: str = POSTGRES_USER
+    password: str = POSTGRES_PASSWORD
 
 
 class FlagStore:

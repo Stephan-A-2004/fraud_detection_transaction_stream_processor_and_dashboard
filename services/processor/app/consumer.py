@@ -4,11 +4,11 @@ from typing import Dict, List, Tuple
 
 import redis
 
-STREAM_NAME = "transactions"
+from services.common.config import TRANSACTION_STREAM, REDIS_PORT, REDIS_HOST
 
 
 class RedisStreamConsumer:
-    def __init__(self, *, host: str = "localhost", port: int = 6379) -> None:
+    def __init__(self, *, host: str = REDIS_HOST, port: int = REDIS_PORT) -> None:
         self._r = redis.Redis(host=host, port=port, decode_responses=True)
         self._last_id = "$"  # Start from new to avoid reprocessing old transactions, therefore faster startup.
 
@@ -16,7 +16,7 @@ class RedisStreamConsumer:
         """
         Returns list of (redis_id, fields) entries.
         """
-        resp = self._r.xread({STREAM_NAME: self._last_id}, count=count, block=block_ms)
+        resp = self._r.xread({TRANSACTION_STREAM: self._last_id}, count=count, block=block_ms)
         if not resp:
             return []
 

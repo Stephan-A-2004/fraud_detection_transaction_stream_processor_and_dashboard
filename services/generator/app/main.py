@@ -5,13 +5,13 @@ import redis
 
 from services.generator.app.synth import generate_transaction
 
-STREAM_NAME = "transactions"
+from services.common.config import TRANSACTION_STREAM, REDIS_HOST, REDIS_PORT
 
 
 def get_redis_client() -> redis.Redis:
     return redis.Redis(
-        host="localhost",
-        port=6379,
+        host=REDIS_HOST,
+        port=REDIS_PORT,
         decode_responses=True
     )
 
@@ -28,7 +28,7 @@ def main() -> None:
 
         payload = json.loads(txn.model_dump_json())
 
-        r.xadd(STREAM_NAME, payload, maxlen=10000, approximate=True)
+        r.xadd(TRANSACTION_STREAM, payload, maxlen=10000, approximate=True)
 
         print(f"Produced transaction: {payload}")
 
