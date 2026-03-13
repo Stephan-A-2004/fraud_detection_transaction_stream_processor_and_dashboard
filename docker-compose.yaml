@@ -16,6 +16,48 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d transactions"]
+      interval: 5s
+      retries: 10
+
+  generator:
+    build:
+      context: .
+      dockerfile: services/generator/Dockerfile
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+
+  processor:
+    build:
+      context: .
+      dockerfile: services/processor/Dockerfile
+    depends_on:
+      redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard/Dockerfile
+    ports:
+      - "8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
 
 volumes:
   pgdata:

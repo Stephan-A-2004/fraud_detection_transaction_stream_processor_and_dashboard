@@ -192,11 +192,13 @@ services/
         config.py
 
     generator/
+        Dockerfile
         app/
             main.py
             synth.py
 
     processor/
+        Dockerfile
         app/
             main.py
             consumer.py
@@ -215,6 +217,7 @@ dashboard/
     dashboard_filtering.py
     dashboard_queries.py
     risk_band_assignment_and_dashboard_styling.py
+    Dockerfile
 
 tests/
     test_schema.py
@@ -234,165 +237,88 @@ docs/
     tables_part1.png
     tables_part2.png
 
-
 docker-compose.yaml
 requirements.txt
 transaction_info.md
 mypy.ini
-```
+README.md
 
----
-
-# Setup
-
-## 1. Create virtual environment
-
-```
-python -m venv .venv
-```
-
-Activate:
-
-Windows
-
-```
-.\.venv\Scripts\activate
-```
-
----
-
-## 2. Install dependencies
-
-```
-pip install -r requirements.txt
-```
-
----
-
-## 3. Start infrastructure
-
-```
-docker compose up -d
-```
-
-This starts:
-
-* Redis
-* PostgreSQL
-
-Verify Redis:
-
-```
-docker exec -it full_project_transaction_stream_processor-redis-1 redis-cli ping
-```
-
-Expected:
-
-```
-PONG
 ```
 
 ---
 
 # Running the System
 
-Run the following components simultaneously.
-
-| Terminal   | Component             |
-| ---------- | --------------------- |
-| Terminal 1 | Transaction Generator |
-| Terminal 2 | Fraud Processor       |
-| Terminal 3 | Dashboard             |
-
-All commands should be run from the project root.
-
----
-
-# Initial setup
-
-Start infrastructure:
-
-
-docker compose up -d
-
-# Terminal 1 — Transaction Generator
-Run:
+Run the following commands:
 
 ```
-.\.venv\Scripts\activate
+cd file_path_of_root_folder
 ```
 
-
-Start the generator:
-
 ```
-python -m services.generator.app.main
+docker compose up --build
 ```
 
+## Accessing dashboard
 
+Go to your internet browser and copy and paste: http://localhost:8501/
 
-Transactions are published to the Redis stream `transactions`.
+Do note, the dashboard can only be accessed while the docker containers are running.
 
----
+## Stopping the System
 
-# Terminal 2 — Fraud Processor
-
-Run:
-
-```
-.\.venv\Scripts\activate
-```
-
-
-Start the processor:
+Run the below command: 
 
 ```
-python -m services.processor.app.main
+docker compose down
 ```
 
+## Resetting the database
 
-Each `FLAG` represents a suspicious transaction pattern detected by the rules.
-
-Alerts are inserted into PostgreSQL.
-
----
-
-# Terminal 3 — Monitoring Dashboard
-
-Run the dashboard:
+Run the below command: 
 
 ```
-$env:PYTHONPATH="."
+docker compose down -v
 ```
 
-Then run in the same terminal:
-
-```
-streamlit run dashboard/app.py
-```
-
-The dashboard opens automatically in your browser.
-
----
 
 # Logs
 
-The transaction generator, fraud processor, and dashboard run as local Python processes, so their logs appear directly in the terminal where each service is started.
+All service logs stream to the terminal when running 
 
-Redis and PostgreSQL run in Docker, so their logs can be viewed with:
+```
+docker compose up --build
+```
+
+When running in detached mode (`docker compose up -d --build`), logs can be viewed with:
 
 ```
 docker compose logs -f
 ```
 
-or for specific infrastructure services:
+or for a specific service:
+
+```
+docker compose logs -f generator
+```
+
+```
+docker compose logs -f processor
+```
+
+```
+docker compose logs -f dashboard
+```
 
 ```
 docker compose logs -f redis
+```
+
+```
 docker compose logs -f postgres
 ```
 
----
+Note: To stop seeing logs, ctrl+c must be pressed
 
 # Dashboard Features
 
@@ -458,22 +384,6 @@ The dashboard supports:
 
 ---
 
-# Stopping the System
-
-Stop infrastructure:
-
-```
-docker compose down
-```
-
-Reset database:
-
-```
-docker compose down -v
-```
-
----
-
 # Example Alert
 
 ```
@@ -506,6 +416,6 @@ These are common building blocks in modern fintech and payment platforms.
 # Possible Future Extension
 
 * Kafka instead of Redis Streams
-* Implement risk score calcultion for users, based on their transaction history and store this in a different table.
+* Implement risk score calculation for users, based on their transaction history and store this in a different table.
 
 ---
