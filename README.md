@@ -7,7 +7,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
 
-A **streaming fraud detection pipeline** built with Python that simulates how financial platforms detect suspicious transaction activity in real time.
+A **streaming fraud detection pipeline** built with Python that simulates how financial platforms detect suspicious transaction activity in real time. It operates under the assumption that all transactions are stored in a separate database, while this system stores suspicious transactions in a table, and system stats like the average and current processed txn rate per second.
 
 The system generates synthetic transaction events, streams them through **Redis Streams**, processes them with a Python fraud detection service, stores alerts in **PostgreSQL**, and visualises suspicious activity in a **Streamlit monitoring dashboard**.
 
@@ -43,7 +43,16 @@ Streamlit Dashboard (Images of the dashboard can be found in docs)
 4. Fraud detection rules are evaluated against the current window.
 5. If a rule triggers, the processor generates an alert and assigns a **risk score**.
 6. Alerts are written to PostgreSQL in the `flags` table.
-7. The **Streamlit dashboard** queries PostgreSQL to visualise alerts and trends.
+7. The processor records throughput metrics (Transactions processed per second currently, and Transactions processed per second on average) to the `processor_stats` table every 100 events.
+8. The **Streamlit dashboard** queries PostgreSQL to visualise alerts, system health and trends.
+
+---
+
+# Pipeline Observability
+
+The stream processor records throughput metrics to a `processor_stats` table in PostgreSQL every 100 events. This includes total events processed, average TPS since startup, and current TPS over the last 100 events.
+
+The dashboard displays these metrics in a **System Health** section, separate from the fraud monitoring views.
 
 ---
 
@@ -324,9 +333,12 @@ Note: To stop seeing logs, ctrl+c must be pressed
 
 ## KPI Metrics
 
-* Total alerts in selected timeframe
-* Unique flagged users
-* Alerts triggered in the last 5 minutes
+* **Flagged transactions** - number of unique transactions that appear in at least one alert window.
+* **Total alerts** - number of fraud rule triggers stored in the `flags` table.
+* **Unique flagged users** - number of distinct users associated with alerts.
+* **Alerts triggered in the last 5 minutes** - short-term alert activity indicator.
+
+Because multiple rules may trigger for the same sliding window, the number of alerts may be higher than the number of flagged transactions.
 
 ---
 
@@ -383,6 +395,19 @@ The dashboard supports:
 * automatic refresh
 
 ---
+
+## System Health
+
+Displays live processor throughput metrics at the bottom of the dashboard, updated every 100 events.
+
+* Total events processed since startup
+* Average throughput (transactions per second) since startup
+* Current throughput (transactions per second) over the last 100 events
+* Time of last recorded measurement
+
+Note: The processed event counter is maintained in memory by the stream processor and resets if the processor container restarts. Alert metrics are persisted in PostgreSQL and therefore may span multiple processor runs.
+
+--- 
 
 # Example Alert
 

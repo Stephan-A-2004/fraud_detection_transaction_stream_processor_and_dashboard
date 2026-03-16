@@ -40,7 +40,7 @@ def main() -> None:
 
         logger.info("Produced transaction: %s", payload)
 
-        time.sleep(1)
+        time.sleep(0)
 
 
 if __name__ == "__main__":

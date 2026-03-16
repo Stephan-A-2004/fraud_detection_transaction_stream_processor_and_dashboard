@@ -61,3 +61,34 @@ VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT (dedupe_key) DO NOTHING;
                     """,
                     (user_id, window_start, window_end, txn_count, total_amount, reason, risk_score, txn_ids_list, dedupe_key),
                 )
+
+class StatsStore:
+    def __init__(self, cfg: DbConfig) -> None:
+        self._conn = psycopg.connect(
+            host=cfg.host,
+            port=cfg.port,
+            dbname=cfg.dbname,
+            user=cfg.user,
+            password=cfg.password,
+            autocommit=True,
+        )
+
+    def close(self) -> None:
+        if self._conn:
+            self._conn.close()
+
+    def insert_stats(
+        self,
+        *,
+        total_processed: int,
+        avg_tps: float,
+        current_tps: float,
+    ) -> None:
+        with self._conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO processor_stats (total_processed, avg_tps, current_tps)
+                VALUES (%s, %s, %s)
+                """,
+                (total_processed, avg_tps, current_tps),
+            )

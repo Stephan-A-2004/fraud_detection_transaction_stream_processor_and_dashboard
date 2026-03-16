@@ -24,6 +24,8 @@ from dashboard.dashboard_queries import (
     get_total_flags,
     get_unique_users,
     get_users,
+    get_processor_stats,
+    get_flagged_transactions,
 )
 
 st.set_page_config(page_title="Fraud Detection Dashboard", layout="wide")
@@ -41,8 +43,9 @@ timeframe_sql = get_timeframe_sql(timeframe)
 bucket = get_bucket_for_timeframe(timeframe)
 time_cond = get_time_condition(timeframe_sql)
 
-kpi1, kpi2, kpi3 = st.columns(3)
-kpi1.metric(f"Total flags ({timeframe})", get_total_flags(timeframe_sql))
+kpi1a, kpi1b, kpi2, kpi3 = st.columns(4)
+kpi1a.metric(f"Total flagged transactions ({timeframe})", get_flagged_transactions(timeframe_sql))
+kpi1b.metric(f"Total alerts ({timeframe})", get_total_flags(timeframe_sql))
 kpi2.metric(f"Unique flagged users ({timeframe})", get_unique_users(timeframe_sql))
 kpi3.metric("Flags (last 5 min)", get_last_5m_flags())
 
@@ -132,6 +135,21 @@ with right_alerts:
 st.subheader("Alerts by rule")
 rule_stats = get_rule_stats(where_clause, params)
 st.bar_chart(rule_stats.set_index("reason"))
+
+st.divider()
+st.subheader("System Health")
+
+stats = get_processor_stats()
+
+if stats.empty:
+    st.info("No processor stats yet. Pipeline may not have processed 100 events.")
+else:
+    row = stats.iloc[0]
+    h1, h2, h3, h4 = st.columns(4)
+    h1.metric("Total events processed since system start", int(row["total_processed"]))
+    h2.metric("Avg throughput (TPS)", f"{row['avg_tps']:.1f}")
+    h3.metric("Current throughput (TPS)", f"{row['current_tps']:.1f}")
+    h4.metric("Last recorded", pd.to_datetime(row["recorded_at"]).strftime("%H:%M:%S"))
 
 if auto_refresh:
     time.sleep(int(refresh_s))

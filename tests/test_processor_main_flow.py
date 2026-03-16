@@ -105,6 +105,12 @@ def run_processor_once_with_fakes(
             self.calls.append(tx)
             return list(flagged_windows)
 
+    class FakeStatsStore:
+        def insert_stats(self, **kwargs: object) -> None:
+            pass
+        def close(self) -> None:
+            pass
+    
     def fake_parse_transaction(fields: RawEntryFields) -> Transaction:
         return Transaction(
             transaction_id=uuid4(),
@@ -124,6 +130,8 @@ def run_processor_once_with_fakes(
         "compute_risk_score",
         lambda total_amount, txn_count, reason: risk_score,
     )
+
+    monkeypatch.setattr(main_mod, "StatsStore", lambda cfg: FakeStatsStore())
 
     main_mod.main()
     return fake_consumer, fake_store
@@ -193,6 +201,12 @@ def test_main_retries_after_redis_read_failure_then_processes_message(monkeypatc
     class FakeDetector:
         def on_transaction(self, tx: Transaction) -> list[FlaggedWindow]:
             return [flagged]
+        
+    class FakeStatsStore:
+        def insert_stats(self, **kwargs: object) -> None:
+            pass
+        def close(self) -> None:
+            pass
 
     def fake_parse_transaction(fields: RawEntryFields) -> Transaction:
         return Transaction(
@@ -209,6 +223,7 @@ def test_main_retries_after_redis_read_failure_then_processes_message(monkeypatc
     monkeypatch.setattr(main_mod, "FlagStore", lambda cfg: fake_store)
     monkeypatch.setattr(main_mod, "parse_transaction", fake_parse_transaction)
     monkeypatch.setattr(main_mod, "compute_risk_score", lambda total_amount, txn_count, reason: 80)
+    monkeypatch.setattr(main_mod, "StatsStore", lambda cfg: FakeStatsStore())
 
     sleep_calls: list[int] = []
     monkeypatch.setattr("time.sleep", lambda secs: sleep_calls.append(secs))
@@ -245,6 +260,12 @@ def test_main_skips_bad_message_cleanly_and_continues(monkeypatch: Any) -> None:
     class FakeDetector:
         def on_transaction(self, tx: Transaction) -> list[FlaggedWindow]:
             return [good_flag]
+        
+    class FakeStatsStore:
+        def insert_stats(self, **kwargs: object) -> None:
+            pass
+        def close(self) -> None:
+            pass
 
     def fake_parse_transaction(fields: RawEntryFields) -> Transaction:
         if "user_id" not in fields:
@@ -263,6 +284,7 @@ def test_main_skips_bad_message_cleanly_and_continues(monkeypatch: Any) -> None:
     monkeypatch.setattr(main_mod, "FlagStore", lambda cfg: fake_store)
     monkeypatch.setattr(main_mod, "parse_transaction", fake_parse_transaction)
     monkeypatch.setattr(main_mod, "compute_risk_score", lambda total_amount, txn_count, reason: 80)
+    monkeypatch.setattr(main_mod, "StatsStore", lambda cfg: FakeStatsStore())
 
     main_mod.main()
 

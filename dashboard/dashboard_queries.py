@@ -11,6 +11,22 @@ def get_total_flags(timeframe_sql: str | None) -> int:
     df = read_df(f"SELECT COUNT(*) AS total_flags FROM flags {build_where(time_cond)}")
     return int(df["total_flags"].iloc[0])
 
+def get_flagged_transactions(timeframe_sql: str | None) -> int:
+    time_cond = get_time_condition(timeframe_sql)
+
+    df = read_df(
+        f"""
+        SELECT COUNT(DISTINCT txn_id) AS flagged_txn
+        FROM (
+            SELECT UNNEST(txn_ids) AS txn_id
+            FROM flags
+            {build_where(time_cond)}
+        ) t
+        """
+    )
+
+    return int(df["flagged_txn"].iloc[0])
+
 
 def get_unique_users(timeframe_sql: str | None) -> int:
     time_cond = get_time_condition(timeframe_sql)
@@ -126,4 +142,14 @@ def get_rule_stats(where_clause: str, params: tuple) -> pd.DataFrame:
         ORDER BY alerts DESC
         """,
         params,
+    )
+
+def get_processor_stats() -> pd.DataFrame:
+    return read_df(
+        """
+        SELECT recorded_at, total_processed, avg_tps, current_tps
+        FROM processor_stats
+        ORDER BY recorded_at DESC
+        LIMIT 1
+        """
     )

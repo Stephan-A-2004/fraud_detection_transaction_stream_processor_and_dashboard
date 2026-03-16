@@ -10,7 +10,7 @@ def test_generate_transaction_returns_valid_transaction_shape() -> None:
 
     assert tx.user_id.startswith("u")
     assert tx.amount > 0
-    assert tx.currency in {"GBP", "EUR"}
+    assert tx.currency in {"GBP"}
     assert tx.merchant
     assert tx.timestamp >= 0
 

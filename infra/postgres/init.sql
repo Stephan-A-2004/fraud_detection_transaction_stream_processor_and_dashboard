@@ -16,3 +16,11 @@ CREATE INDEX IF NOT EXISTS idx_flags_user_time
   ON flags (user_id, window_start, window_end);
 
 CREATE UNIQUE INDEX IF NOT EXISTS flags_dedupe_key_uniq ON flags (dedupe_key);
+
+CREATE TABLE IF NOT EXISTS processor_stats (
+    id BIGSERIAL PRIMARY KEY,
+    recorded_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    total_processed INTEGER NOT NULL,
+    avg_tps FLOAT NOT NULL,
+    current_tps FLOAT NOT NULL
+);

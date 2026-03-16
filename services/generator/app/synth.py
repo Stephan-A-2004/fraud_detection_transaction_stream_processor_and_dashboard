@@ -1,7 +1,7 @@
 import random
 from services.common.schemas import Transaction
 
-USERS = [f"u{i}" for i in range(1, 21)]
+USERS = [f"u{i}" for i in range(1, 1001)]
 
 MERCHANTS = [
     "Amazon",
@@ -12,7 +12,7 @@ MERCHANTS = [
     "Netflix",
 ]
 
-CURRENCIES = ["GBP", "EUR"]
+CURRENCIES = ["GBP"]
 
 
 def generate_transaction() -> Transaction:
