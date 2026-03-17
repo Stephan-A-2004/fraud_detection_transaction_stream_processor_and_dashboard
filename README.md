@@ -7,6 +7,12 @@
 ![Docker](https://img.shields.io/badge/Docker-Compose-blue)
 ![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
 
+## Summary
+
+Real-time fraud detection pipeline built with Python, Redis Streams, and PostgreSQL.  
+Processes streaming transaction data, detects suspicious activity using rule-based logic, and visualises alerts via a live Streamlit dashboard.  
+Fully containerised with Docker and includes automated tests.
+
 A **streaming fraud detection pipeline** built with Python that simulates how financial platforms detect suspicious transaction activity in real time. It operates under the assumption that all transactions are stored in a separate database, while this system stores suspicious transactions in a table, and system stats like the average and current processed txn rate per second.
 
 The system generates synthetic transaction events, streams them through **Redis Streams**, processes them with a Python fraud detection service, stores alerts in **PostgreSQL**, and visualises suspicious activity in a **Streamlit monitoring dashboard**.
@@ -56,6 +62,16 @@ The dashboard displays these metrics in a **System Health** section, separate fr
 
 ---
 
+# Performance
+
+The system is designed for near real-time processing of generated transactions.
+
+* Processes on average over 90 transactions per second locally (machine dependent)
+* Dashboard updates in near real-time with configurable refresh intervals
+
+Note: Refresh timing is approximate due to browser scheduling and application processing time.
+
+---
 
 # Technologies Used
 
@@ -245,6 +261,7 @@ docs/
     flags_per_minute_chart.png
     tables_part1.png
     tables_part2.png
+    system_health_stats.png
 
 docker-compose.yaml
 requirements.txt
@@ -438,7 +455,7 @@ These are common building blocks in modern fintech and payment platforms.
 
 ---
 
-# Possible Future Extension
+# Future Improvements
 
 * Kafka instead of Redis Streams
 * Implement risk score calculation for users, based on their transaction history and store this in a different table.

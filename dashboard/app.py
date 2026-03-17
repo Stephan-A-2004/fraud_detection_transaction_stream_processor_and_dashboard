@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 from services.common.config import REFRESH_SECONDS
 from dashboard.dashboard_filtering import (
@@ -31,13 +32,45 @@ from dashboard.dashboard_queries import (
 st.set_page_config(page_title="Fraud Detection Dashboard", layout="wide")
 st.title("Fraud Detection Dashboard")
 
-colA, colB, colC = st.columns([1, 1, 2])
-with colA:
-    auto_refresh = st.checkbox("Auto-refresh", value=True)
-with colB:
-    refresh_s = st.number_input("Refresh (sec)", min_value=1, max_value=30, value=REFRESH_SECONDS)
 
-timeframe = st.selectbox("Timeframe", TIMEFRAME_OPTIONS, index=1)
+if "last_refresh_change" not in st.session_state:
+    st.session_state.last_refresh_change = 0.0
+
+if "timeframe" not in st.session_state:
+    st.session_state.timeframe = TIMEFRAME_OPTIONS[1]
+
+if "selected_user" not in st.session_state:
+    st.session_state.selected_user = "All"
+
+if "auto_refresh" not in st.session_state:
+    st.session_state.auto_refresh = True
+
+if "refresh_s" not in st.session_state:
+    st.session_state.refresh_s = int(REFRESH_SECONDS)
+
+def on_refresh_change():
+    st.session_state.last_refresh_change = time.time()
+
+colA, colB, _spacing = st.columns([1, 1, 2])
+with colA:
+    st.checkbox("Auto-refresh", key="auto_refresh")
+    auto_refresh = st.session_state.auto_refresh
+with colB:
+    st.number_input(
+        "Refresh (sec)",
+        min_value=1,
+        max_value=30,
+        step=1,
+        key="refresh_s",
+        on_change=on_refresh_change,
+    )
+
+timeframe = st.selectbox(
+    "Timeframe",
+    TIMEFRAME_OPTIONS,
+    index=TIMEFRAME_OPTIONS.index(st.session_state.timeframe),
+)
+st.session_state.timeframe = timeframe
 
 timeframe_sql = get_timeframe_sql(timeframe)
 bucket = get_bucket_for_timeframe(timeframe)
@@ -76,9 +109,22 @@ else:
 st.divider()
 
 users_df = get_users(timeframe_sql)
-user_options = ["All"] + users_df["user_id"].tolist()
+# Extract numeric part and sort properly
+users = users_df["user_id"].tolist()
 
-selected_user = st.selectbox("Filter by user", user_options)
+users_sorted = sorted(users, key=lambda x: int(x.replace("u", "")))
+
+user_options = ["All"] + users_sorted
+
+if st.session_state.selected_user not in user_options:
+    st.session_state.selected_user = "All"
+
+selected_user = st.selectbox(
+    "Filter by user",
+    user_options,
+    index=user_options.index(st.session_state.selected_user),
+)
+st.session_state.selected_user = selected_user
 
 user_cond = "" if selected_user == "All" else "user_id = %s"
 where_clause = build_where(time_cond, user_cond)
@@ -152,5 +198,14 @@ else:
     h4.metric("Last recorded", pd.to_datetime(row["recorded_at"]).strftime("%H:%M:%S"))
 
 if auto_refresh:
-    time.sleep(int(refresh_s))
-    st.rerun()
+    seconds_since_change = time.time() - st.session_state.last_refresh_change
+
+    if seconds_since_change < 2:
+        interval_ms = 2000
+    else:
+        interval_ms = st.session_state.refresh_s * 1000
+
+    st_autorefresh(
+        interval=interval_ms,
+        key="dashboard_autorefresh",
+    )
