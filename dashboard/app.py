@@ -48,7 +48,7 @@ if "auto_refresh" not in st.session_state:
 if "refresh_s" not in st.session_state:
     st.session_state.refresh_s = int(REFRESH_SECONDS)
 
-def on_refresh_change():
+def on_refresh_change() -> None:
     st.session_state.last_refresh_change = time.time()
 
 colA, colB, _spacing = st.columns([1, 1, 2])
